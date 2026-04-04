@@ -1,0 +1,8 @@
+{
+  "name": "diamond-hunter-frontend",
+  "version": "2.0.0",
+  "description": "Diamond Hunter Game — Frontend (Full Reconstruction)",
+  "scripts": {
+    "build": "echo 'Static site — no build step required'"
+  }
+}

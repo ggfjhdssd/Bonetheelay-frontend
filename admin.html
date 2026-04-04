@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Diamond Hunter — Admin Panel</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07070f;--sur:#111118;--sur2:#15151e;--bdr:rgba(255,255,255,.08);
+  --acc:#7c3aed;--grn:#00cc88;--red:#f43f5e;--ylw:#f5b800;--blu:#3d9eff;
+  --tx:#eaeaf2;--sub:rgba(255,255,255,.35);--nav-h:58px;--safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--tx);display:flex;flex-direction:column;max-width:500px;margin:0 auto;}
+/* Loader */
+#ldr{position:fixed;inset:0;z-index:900;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .3s;}
+.ldr-icon{font-size:3rem;animation:pulse 1.3s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.ldr-t{font-size:1.1rem;font-weight:900;background:linear-gradient(135deg,#818cf8,#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.ring{width:26px;height:26px;border:2.5px solid rgba(255,255,255,.1);border-top-color:#818cf8;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+#errSc{position:fixed;inset:0;z-index:800;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;}
+/* Shell */
+#shell{position:relative;z-index:1;display:none;flex-direction:column;height:100%;overflow:hidden;}
+.hdr{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:10px 14px 8px;background:var(--sur);border-bottom:1px solid var(--bdr);}
+.hdr-logo{font-size:1.05rem;font-weight:900;background:linear-gradient(135deg,#f43f5e,#f5b800);-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex:1;}
+.hdr-badge{background:rgba(244,63,94,.15);border:1px solid rgba(244,63,94,.3);border-radius:8px;padding:4px 9px;font-size:10px;font-weight:800;color:#f43f5e;}
+/* Stats bar */
+.sbar{flex-shrink:0;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bdr);border-bottom:1px solid var(--bdr);}
+.sb-it{background:var(--sur);padding:7px 4px;text-align:center;}
+.sb-val{font-size:.9rem;font-weight:900;line-height:1;}
+.sb-lbl{font-size:8px;color:var(--sub);margin-top:2px;white-space:nowrap;}
+/* Pages */
+.pages{flex:1;overflow:hidden;position:relative;}
+.page{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 10px calc(var(--nav-h)+var(--safe-b)+8px);display:none;}
+.page.active{display:block;}
+/* Bottom Nav */
+.bnav{flex-shrink:0;display:grid;grid-template-columns:repeat(5,1fr);height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--sur);border-top:1px solid var(--bdr);}
+.bn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--sub);border:none;background:none;font-family:'Outfit',sans-serif;transition:color .15s;position:relative;}
+.bn.on{color:var(--acc);}.bn-ic{font-size:1.15rem;line-height:1;}.bn-lb{font-size:8px;font-weight:700;}
+.bn-badge{position:absolute;top:5px;right:calc(50%-16px);background:var(--red);color:#fff;font-size:8px;font-weight:900;border-radius:99px;padding:1px 5px;display:none;}
+.bn-badge.on{display:block;}
+/* Filter tabs */
+.ftabs{display:flex;gap:5px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+.ftabs::-webkit-scrollbar{display:none;}
+.ftab{flex-shrink:0;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid var(--bdr);background:rgba(255,255,255,.04);color:var(--sub);cursor:pointer;transition:.15s;}
+.ftab.on{background:var(--acc);border-color:var(--acc);color:#fff;}
+/* Cards */
+.sec{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.sec-t{font-size:12px;font-weight:800;display:flex;align-items:center;gap:5px;}
+.card{background:var(--sur2);border:1px solid var(--bdr);border-radius:13px;padding:13px;margin-bottom:9px;}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;font-family:'Outfit',sans-serif;font-weight:700;border:none;cursor:pointer;border-radius:9px;padding:9px 13px;color:#fff;font-size:12px;transition:opacity .12s,transform .1s;}
+.btn:active:not(:disabled){transform:scale(.96);}.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-f{width:100%;justify-content:center;}
+.btn-grn{background:linear-gradient(135deg,#059669,#10b981);}
+.btn-red{background:rgba(220,38,38,.85);}
+.btn-pur{background:linear-gradient(135deg,#7c3aed,#a855f7);}
+.btn-ylw{background:linear-gradient(135deg,#b45309,#f59e0b);}
+.btn-blu{background:linear-gradient(135deg,#1d4ed8,#3b82f6);}
+.btn-gh{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);}
+.btn-sm{padding:6px 10px;font-size:11px;border-radius:7px;}
+/* Inputs */
+.inp{width:100%;padding:10px 12px;background:rgba(0,0,0,.3);border:1px solid var(--bdr);border-radius:9px;color:var(--tx);font-family:'Outfit',sans-serif;font-size:13px;outline:none;transition:.2s;}
+.inp:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(124,58,237,.15);}
+.inp::placeholder{color:rgba(255,255,255,.2);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.lbl{font-size:10px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+/* Deposit / Withdrawal items */
+.dep-item{background:rgba(0,0,0,.2);border:1px solid var(--bdr);border-radius:11px;padding:11px;margin-bottom:7px;}
+.dep-name{font-weight:800;font-size:12px;}
+.dep-amt{font-size:1.1rem;font-weight:900;color:var(--ylw);}
+.dep-sub{font-size:10px;color:var(--sub);margin-top:2px;}
+.dep-txn{font-family:monospace;font-size:9px;color:rgba(255,255,255,.3);word-break:break-all;margin-top:3px;}
+.dep-note{font-size:10px;color:var(--red);background:rgba(244,63,94,.08);border-radius:6px;padding:4px 7px;margin-top:5px;}
+.dep-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+/* Status pills */
+.status-pill{padding:2px 8px;border-radius:99px;font-size:9px;font-weight:700;text-transform:uppercase;}
+.s-pending{background:rgba(245,184,0,.12);color:var(--ylw);}
+.s-confirmed{background:rgba(0,204,136,.12);color:var(--grn);}
+.s-rejected{background:rgba(244,63,94,.12);color:var(--red);}
+.s-confirming{background:rgba(61,158,255,.12);color:var(--blu);}
+/* User items */
+.user-item{display:flex;align-items:center;gap:9px;background:rgba(0,0,0,.2);border:1px solid var(--bdr);border-radius:11px;padding:10px;margin-bottom:7px;}
+.u-av{width:34px;height:34px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,#7c3aed,#f43f5e);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:900;}
+.u-inf{flex:1;min-width:0;}
+.u-name{font-weight:800;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.u-sub{font-size:10px;color:var(--sub);}
+.u-bal{font-weight:900;font-size:.9rem;color:var(--grn);flex-shrink:0;}
+/* Toggle */
+.toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.toggle:last-child{border:none;}
+.tgl-info .tgl-t{font-size:13px;font-weight:700;}
+.tgl-info .tgl-s{font-size:11px;color:var(--sub);margin-top:2px;}
+.switch{width:44px;height:24px;background:rgba(255,255,255,.15);border:none;border-radius:99px;cursor:pointer;position:relative;transition:.25s;flex-shrink:0;}
+.switch.on{background:var(--acc);}
+.switch::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.25s;}
+.switch.on::after{left:calc(100% - 21px);}
+/* Game items */
+.game-item{background:rgba(0,0,0,.2);border:1px solid var(--bdr);border-radius:11px;padding:10px;margin-bottom:7px;}
+.game-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;}
+.game-user{font-weight:800;font-size:12px;}
+.game-amt{font-size:.95rem;font-weight:900;}
+.game-info{font-size:10px;color:var(--sub);}
+/* Agent items */
+.agent-item{background:rgba(0,0,0,.2);border:1px solid var(--bdr);border-radius:11px;padding:11px;margin-bottom:8px;}
+.agent-name{font-weight:800;font-size:13px;}
+.agent-sub{font-size:11px;color:var(--sub);margin-top:2px;}
+.agent-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:9px 0;}
+.ast{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;padding:7px;text-align:center;}
+.ast-v{font-size:.9rem;font-weight:900;line-height:1;}
+.ast-l{font-size:9px;color:var(--sub);margin-top:2px;}
+.agent-comms{display:flex;gap:8px;margin-bottom:8px;}
+.comm-badge{flex:1;background:rgba(0,0,0,.3);border:1px solid var(--bdr);border-radius:8px;padding:8px;text-align:center;}
+.comm-badge-pct{font-size:1.2rem;font-weight:900;}
+.comm-badge-pct.dep{color:var(--ylw);}
+.comm-badge-pct.tur{color:var(--grn);}
+.comm-badge-lbl{font-size:9px;color:var(--sub);margin-top:2px;}
+/* Misc */
+.toast{position:fixed;bottom:calc(var(--nav-h)+var(--safe-b)+8px);left:50%;transform:translateX(-50%) translateY(14px);background:rgba(10,10,18,.97);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 18px;font-size:12px;font-weight:700;z-index:9999;transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .25s;opacity:0;pointer-events:none;white-space:pre-line;text-align:center;backdrop-filter:blur(20px);max-width:calc(100vw - 28px);}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.t-ok{border-color:rgba(0,204,136,.4);color:#00cc88;}.t-err{border-color:rgba(244,63,94,.4);color:#f87171;}.t-info{border-color:rgba(61,158,255,.4);color:#3d9eff;}
+.empty{display:flex;flex-direction:column;align-items:center;padding:28px 14px;gap:7px;text-align:center;}
+.ei{font-size:2rem;opacity:.5;}.et{font-size:12px;color:var(--sub);line-height:1.6;}
+.search-bar{display:flex;gap:7px;margin-bottom:10px;}
+.pg-btns{display:flex;gap:6px;justify-content:center;margin-top:10px;}
+.expire-lbl{font-size:9px;color:rgba(255,184,0,.6);margin-top:3px;}
+.proc-by{font-size:9px;color:rgba(255,255,255,.25);margin-top:2px;}
+</style>
+</head>
+<body>
+<div id="ldr"><div class="ldr-icon">💎</div><div class="ldr-t">Diamond Hunter Admin</div><div class="ring"></div></div>
+<div id="errSc"><div style="font-size:3rem">🚫</div><div style="font-size:1.1rem;font-weight:800;">Access Denied</div><div style="font-size:13px;color:var(--sub);">You do not have permission to access this page</div></div>
+
+<div id="shell">
+  <div class="hdr">
+    <div class="hdr-logo">🛡️ MINES ADMIN</div>
+    <div class="hdr-badge" id="hdrBadge">Admin</div>
+  </div>
+  <div class="sbar">
+    <div class="sb-it"><div class="sb-val" id="sbUsers">—</div><div class="sb-lbl">Users</div></div>
+    <div class="sb-it"><div class="sb-val" id="sbGames">—</div><div class="sb-lbl">Games</div></div>
+    <div class="sb-it"><div class="sb-val" id="sbDep">—</div><div class="sb-lbl">Dep⏳</div></div>
+    <div class="sb-it"><div class="sb-val" id="sbWd">—</div><div class="sb-lbl">Wd⏳</div></div>
+  </div>
+
+  <div class="pages">
+
+    <!-- ===== DEPOSITS ===== -->
+    <div class="page active" id="pg-dep">
+      <div class="sec"><div class="sec-t">💰 Deposits</div><button class="btn btn-gh btn-sm" onclick="loadDeps()">🔄</button></div>
+      <div class="ftabs" id="depTabs">
+        <div class="ftab on"  onclick="setDepTab('pending')"   id="dTab-pending">⏳ Pending</div>
+        <div class="ftab"     onclick="setDepTab('confirmed')" id="dTab-confirmed">✅ Confirmed</div>
+        <div class="ftab"     onclick="setDepTab('rejected')"  id="dTab-rejected">❌ Rejected</div>
+      </div>
+      <div id="depList"><div class="empty"><div class="ei">💰</div><div class="et">Loading...</div></div></div>
+      <div class="pg-btns" id="depPg"></div>
+    </div>
+
+    <!-- ===== WITHDRAWALS ===== -->
+    <div class="page" id="pg-wd">
+      <div class="sec"><div class="sec-t">💸 Withdrawals</div><button class="btn btn-gh btn-sm" onclick="loadWds()">🔄</button></div>
+      <div class="ftabs" id="wdTabs">
+        <div class="ftab on"  onclick="setWdTab('pending')"   id="wTab-pending">⏳ Pending</div>
+        <div class="ftab"     onclick="setWdTab('confirmed')" id="wTab-confirmed">✅ Confirmed</div>
+        <div class="ftab"     onclick="setWdTab('rejected')"  id="wTab-rejected">❌ Rejected</div>
+      </div>
+      <div id="wdList"><div class="empty"><div class="ei">💸</div><div class="et">Loading...</div></div></div>
+      <div class="pg-btns" id="wdPg"></div>
+    </div>
+
+    <!-- ===== USERS ===== -->
+    <div class="page" id="pg-users">
+      <div class="search-bar">
+        <input class="inp" id="uSearch" placeholder="ID / Username ရှာပါ" oninput="searchUsers()">
+      </div>
+      <div id="userList"><div class="empty"><div class="ei">👤</div><div class="et">Loading...</div></div></div>
+      <div class="pg-btns" id="userPg"></div>
+    </div>
+
+    <!-- ===== AGENTS ===== -->
+    <div class="page" id="pg-agents">
+      <div class="sec"><div class="sec-t">🎯 Agents</div><button class="btn btn-gh btn-sm" onclick="loadAgents()">🔄</button></div>
+      <div id="agentList"><div class="empty"><div class="ei">🎯</div><div class="et">Loading...</div></div></div>
+    </div>
+
+    <!-- ===== SETTINGS + GAMES ===== -->
+    <div class="page" id="pg-set">
+      <div class="sec"><div class="sec-t">⚙️ Settings</div></div>
+
+      <!-- Maintenance -->
+      <div class="card">
+        <div class="toggle">
+          <div class="tgl-info"><div class="tgl-t">🔧 Maintenance Mode</div><div class="tgl-s">ON ဖြစ်လျှင် User များ ဆော့မရ</div></div>
+          <button class="switch" id="maintSwitch" onclick="toggleMaint()"></button>
+        </div>
+      </div>
+
+      <!-- Games History -->
+      <div class="card">
+        <div class="sec-t" style="margin-bottom:8px;">💎 Game History</div>
+        <div id="gameList"><div class="empty"><div class="ei">💣</div><div class="et">Loading...</div></div></div>
+        <div class="pg-btns" id="gamePg"></div>
+      </div>
+
+      <!-- Broadcast -->
+      <div class="card">
+        <div class="lbl" style="margin-bottom:8px;">📢 Broadcast Message</div>
+        <textarea class="inp" id="bcMsg" rows="3" placeholder="Message ရိုက်ပါ (HTML OK)" style="resize:none;"></textarea>
+        <div class="row2" style="margin-top:8px;">
+          <input class="inp" id="bcBtnTxt" placeholder="Button text (optional)">
+          <input class="inp" id="bcBtnUrl" placeholder="Button URL">
+        </div>
+        <button class="btn btn-pur btn-f" style="margin-top:8px;" onclick="sendBroadcast()">📢 Send Broadcast</button>
+      </div>
+
+      <!-- Redeem Codes -->
+      <div class="card">
+        <div class="lbl" style="margin-bottom:8px;">🎟️ Redeem Codes</div>
+        <div class="row2" style="margin-bottom:7px;">
+          <input class="inp" id="rcCode" placeholder="CODE NAME" oninput="this.value=this.value.toUpperCase()">
+          <input class="inp" id="rcAmt" type="number" placeholder="MMK Amount">
+        </div>
+        <input class="inp" id="rcMax" type="number" placeholder="Max Uses (1=single)" style="margin-bottom:7px;">
+        <button class="btn btn-ylw btn-f" onclick="createCode()">🎟️ Create Code</button>
+        <div id="codeList" style="margin-top:10px;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <nav class="bnav">
+    <button class="bn on" data-p="dep" onclick="nav('dep')"><div class="bn-ic">💰</div><div class="bn-lb">Add Gold</div><div class="bn-badge on" id="bdepBadge"></div></button>
+    <button class="bn" data-p="wd" onclick="nav('wd')"><div class="bn-ic">💸</div><div class="bn-lb">Take Gold</div><div class="bn-badge" id="bwdBadge"></div></button>
+    <button class="bn" data-p="users" onclick="nav('users')"><div class="bn-ic">👥</div><div class="bn-lb">Users</div></button>
+    <button class="bn" data-p="agents" onclick="nav('agents')"><div class="bn-ic">🎯</div><div class="bn-lb">Agents</div></button>
+    <button class="bn" data-p="set" onclick="nav('set')"><div class="bn-ic">⚙️</div><div class="bn-lb">Settings</div></button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+const API = 'https://minebackend-dyyq.onrender.com';
+let adminId = null;
+
+// ── Utilities ────────────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function K(n){ return (n||0).toLocaleString(); }
+function fmtDate(d){ if(!d) return '—'; const dt=new Date(d); return `${dt.getDate()}/${dt.getMonth()+1} ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`; }
+function toast(msg, type='ok', dur=2800){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=`toast t-${type}`;
+  el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),dur);
+}
+async function api(path, method='GET', body=null){
+  const opts={method,headers:{'Content-Type':'application/json','x-admin-id':String(adminId||'')}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(API+path,opts);
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error||'Request failed');
+  return d;
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+function nav(pg){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.bn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+pg).classList.add('active');
+  document.querySelector(`.bn[data-p="${pg}"]`).classList.add('on');
+  if(pg==='dep')    loadDeps();
+  if(pg==='wd')     loadWds();
+  if(pg==='users')  loadUsers(1);
+  if(pg==='agents') loadAgents();
+  if(pg==='set')    { loadSettings(); loadGames(1); }
+}
+
+// ── Stats ────────────────────────────────────────────────────────────────────
+async function loadStats(){
+  try{
+    const d=await api('/api/admin/stats');
+    document.getElementById('sbUsers').textContent=K(d.totalUsers);
+    document.getElementById('sbGames').textContent=K(d.totalGames);
+    document.getElementById('sbDep').textContent=d.pendingDeposits||0;
+    document.getElementById('sbWd').textContent=d.pendingWithdrawals||0;
+    const db=document.getElementById('bdepBadge'), wb=document.getElementById('bwdBadge');
+    if(d.pendingDeposits>0){db.textContent=d.pendingDeposits;db.classList.add('on');}else{db.classList.remove('on');}
+    if(d.pendingWithdrawals>0){wb.textContent=d.pendingWithdrawals;wb.classList.add('on');}else{wb.classList.remove('on');}
+  }catch(e){}
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// DEPOSITS
+// ════════════════════════════════════════════════════════════════════════════
+let depStatus='pending', depPage=1;
+
+function setDepTab(status){
+  depStatus=status; depPage=1;
+  document.querySelectorAll('#depTabs .ftab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('dTab-'+status).classList.add('on');
+  loadDeps();
+}
+
+async function loadDeps(){
+  const el=document.getElementById('depList');
+  el.innerHTML=`<div class="empty"><div class="ei">💰</div><div class="et">Loading...</div></div>`;
+  try{
+    const d=await api(`/api/admin/deposits?status=${depStatus}&page=${depPage}`);
+    const deps = d.deposits || d; // support both old and new format
+    if(!deps.length){
+      el.innerHTML=`<div class="empty"><div class="ei">💰</div><div class="et">${depStatus==='pending'?'Pending Deposit မရှိပါ':depStatus==='confirmed'?'Confirmed Deposit မရှိပါ':'Rejected Deposit မရှိပါ'}</div></div>`;
+      document.getElementById('depPg').innerHTML='';
+      return;
+    }
+    el.innerHTML=deps.map(dep=>renderDepItem(dep)).join('');
+    renderPagination('depPg', depPage, d.pages||1, p=>{ depPage=p; loadDeps(); });
+  }catch(e){el.innerHTML=`<div class="empty"><div class="ei">❌</div><div class="et">${esc(e.message)}</div></div>`;}
+}
+
+function renderDepItem(d){
+  const isPending = d.status==='pending';
+  const expireIn  = d.expireAt ? getExpireLabel(d.expireAt) : null;
+  const note      = d.rejectionNote ? `<div class="dep-note">❌ ${esc(d.rejectionNote)}</div>` : '';
+  const procBy    = d.processedAt ? `<div class="proc-by">✅ ပြင်ဆင်ပြီး: ${fmtDate(d.processedAt)}${d.processedBy==='agent'?' (Agent)':''}</div>` : '';
+  return `
+  <div class="dep-item" id="da-${d._id}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div class="dep-name">${esc(d.userName)} <span style="color:var(--sub);font-weight:500;">(${d.userId})</span></div>
+        <div class="dep-sub">${d.paymentMethod==='wave'?'🌊 Wave':'📱 KPay'} • ${fmtDate(d.createdAt)}</div>
+        <div class="dep-sub">📝 ${esc(d.kpayName)}</div>
+        <div class="dep-txn">🔢 ${esc(d.transactionId)}</div>
+        ${procBy}
+        ${expireIn ? `<div class="expire-lbl">⏰ ${expireIn} မှာ ပျက်မည်</div>` : ''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div class="dep-amt">${K(d.amount)}</div>
+        <div class="dep-sub">MMK</div>
+        <div class="status-pill s-${d.status}">${d.status}</div>
+      </div>
+    </div>
+    ${note}
+    ${isPending ? `<div class="dep-actions">
+      <button class="btn btn-grn btn-sm" onclick="confirmDep('${d._id}')">✅ Confirm</button>
+      <button class="btn btn-red btn-sm" onclick="rejectDep('${d._id}')">❌ Reject</button>
+    </div>` : ''}
+  </div>`;
+}
+
+async function confirmDep(id){
+  try{
+    await api(`/api/admin/deposits/${id}/confirm`,'POST');
+    toast('✅ Confirmed & ငွေဖြည့်ပြီ!','ok');
+    loadDeps(); loadStats();
+  }catch(e){toast(e.message,'err');}
+}
+async function rejectDep(id){
+  const reason=prompt('Reject အကြောင်းပြချက် (optional):')||'';
+  try{
+    await api(`/api/admin/deposits/${id}/reject`,'POST',{reason});
+    toast('❌ Rejected','info');
+    loadDeps(); loadStats();
+  }catch(e){toast(e.message,'err');}
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// WITHDRAWALS
+// ════════════════════════════════════════════════════════════════════════════
+let wdStatus='pending', wdPage=1;
+
+function setWdTab(status){
+  wdStatus=status; wdPage=1;
+  document.querySelectorAll('#wdTabs .ftab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('wTab-'+status).classList.add('on');
+  loadWds();
+}
+
+async function loadWds(){
+  const el=document.getElementById('wdList');
+  el.innerHTML=`<div class="empty"><div class="ei">💸</div><div class="et">Loading...</div></div>`;
+  try{
+    const d=await api(`/api/admin/withdrawals?status=${wdStatus}&page=${wdPage}`);
+    const wds = d.withdrawals || d;
+    if(!wds.length){
+      el.innerHTML=`<div class="empty"><div class="ei">💸</div><div class="et">${wdStatus==='pending'?'Pending Withdrawal မရှိပါ':wdStatus==='confirmed'?'Confirmed Withdrawal မရှိပါ':'Rejected Withdrawal မရှိပါ'}</div></div>`;
+      document.getElementById('wdPg').innerHTML='';
+      return;
+    }
+    el.innerHTML=wds.map(w=>renderWdItem(w)).join('');
+    renderPagination('wdPg', wdPage, d.pages||1, p=>{ wdPage=p; loadWds(); });
+  }catch(e){el.innerHTML=`<div class="empty"><div class="ei">❌</div><div class="et">${esc(e.message)}</div></div>`;}
+}
+
+function renderWdItem(w){
+  const isPending = w.status==='pending';
+  const expireIn  = w.expireAt ? getExpireLabel(w.expireAt) : null;
+  const note      = w.rejectionNote ? `<div class="dep-note">❌ ${esc(w.rejectionNote)} — ငွေပြန်အမ်းပြီ</div>` : '';
+  const procAt    = w.processedAt ? `<div class="proc-by">✅ ပြင်ဆင်ပြီး: ${fmtDate(w.processedAt)}</div>` : '';
+  return `
+  <div class="dep-item" id="wa-${w._id}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div class="dep-name">${esc(w.userName)} <span style="color:var(--sub);font-weight:500;">(${w.userId})</span></div>
+        <div class="dep-sub">${w.paymentMethod==='wave'?'🌊 Wave':'📱 KPay'}: <b>${esc(w.kpayNumber)}</b></div>
+        <div class="dep-sub">📝 ${esc(w.kpayName)} • ကျန်: ${K(w.userBalance)} MMK</div>
+        <div class="dep-sub">🕐 ${fmtDate(w.createdAt)}</div>
+        ${procAt}
+        ${expireIn ? `<div class="expire-lbl">⏰ ${expireIn} မှာ ပျက်မည်</div>` : ''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div class="dep-amt">${K(w.amount)}</div>
+        <div class="dep-sub">MMK</div>
+        <div class="status-pill s-${w.status}">${w.status}</div>
+      </div>
+    </div>
+    ${note}
+    ${isPending ? `<div class="dep-actions">
+      <button class="btn btn-grn btn-sm" onclick="confirmWd('${w._id}')">✅ Pay Done</button>
+      <button class="btn btn-red btn-sm" onclick="rejectWd('${w._id}')">❌ Reject</button>
+    </div>` : ''}
+  </div>`;
+}
+
+async function confirmWd(id){
+  try{await api(`/api/admin/withdrawals/${id}/confirm`,'POST');toast('✅ Paid!','ok');loadWds();loadStats();}
+  catch(e){toast(e.message,'err');}
+}
+async function rejectWd(id){
+  const reason=prompt('Reject အကြောင်းပြချက် (optional):')||'';
+  try{await api(`/api/admin/withdrawals/${id}/reject`,'POST',{reason});toast('❌ Rejected — ငွေပြန်အမ်းပြီ','info');loadWds();loadStats();}
+  catch(e){toast(e.message,'err');}
+}
+
+// Expire label helper
+function getExpireLabel(expireAt){
+  const ms=new Date(expireAt)-Date.now();
+  if(ms<=0) return 'ပျက်ပြီ';
+  const h=Math.floor(ms/3600000);
+  if(h>=24) return `${Math.floor(h/24)}d ${h%24}h`;
+  const m=Math.floor((ms%3600000)/60000);
+  return h>0?`${h}h ${m}m`:`${m}m`;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// USERS
+// ════════════════════════════════════════════════════════════════════════════
+let uPage=1;
+let searchTimer;
+function searchUsers(){ clearTimeout(searchTimer); searchTimer=setTimeout(()=>{uPage=1;loadUsers(1);},400); }
+
+async function loadUsers(page=1){
+  uPage=page;
+  const sq=document.getElementById('uSearch').value.trim();
+  const el=document.getElementById('userList');
+  el.innerHTML=`<div class="empty"><div class="ei">👤</div><div class="et">Loading...</div></div>`;
+  try{
+    const d=await api(`/api/admin/users?page=${page}&search=${encodeURIComponent(sq)}`);
+    if(!d.users.length){el.innerHTML=`<div class="empty"><div class="ei">👤</div><div class="et">User မတွေ့ပါ</div></div>`;return;}
+    el.innerHTML=d.users.map(u=>`
+      <div class="user-item">
+        <div class="u-av">${((u.firstName||u.username||'?')[0]||'?').toUpperCase()}</div>
+        <div class="u-inf">
+          <div class="u-name">${esc(u.firstName||u.username||'User'+u.telegramId)}</div>
+          <div class="u-sub">ID: ${u.telegramId} ${u.isBanned?'🚫 BANNED':''} ${u.role==='agent'?'🎯 AGENT':''}</div>
+          <div class="u-sub">Games: ${u.totalGames||0} • W: ${u.wins||0} • L: ${u.losses||0}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <div class="u-bal">${K(u.balance)}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+            <button class="btn btn-gh btn-sm" onclick="adjustBal(${u.telegramId})">±💰</button>
+            <button class="btn btn-${u.isBanned?'grn':'red'} btn-sm" onclick="banUser(${u.telegramId},${!u.isBanned})">${u.isBanned?'✅ Unban':'🚫 Ban'}</button>
+            <button class="btn btn-${u.role==='agent'?'ylw':'pur'} btn-sm" onclick="makeAgent(${u.telegramId},${u.role!=='agent'})">${u.role==='agent'?'❌ Remove':'🎯 Agent'}</button>
+          </div>
+        </div>
+      </div>`).join('');
+    renderPagination('userPg', page, d.pages, p=>loadUsers(p));
+  }catch(e){el.innerHTML=`<div class="empty"><div class="ei">❌</div><div class="et">${esc(e.message)}</div></div>`;}
+}
+
+async function adjustBal(tid){
+  const amt=prompt('Balance ပြောင်းမည် (+/- ကျပ်):');
+  if(!amt||isNaN(amt))return;
+  const reason=prompt('အကြောင်းပြချက် (optional):')||'';
+  try{await api(`/api/admin/users/${tid}/balance`,'POST',{amount:parseInt(amt),reason});toast(`✅ Balance ${parseInt(amt)>0?'+':''}${parseInt(amt).toLocaleString()} ပြောင်းပြီ`,'ok');loadUsers(uPage);}
+  catch(e){toast(e.message,'err');}
+}
+async function banUser(tid,ban){
+  try{await api(`/api/admin/users/${tid}/ban`,'POST',{ban});toast(ban?'🚫 Banned!':'✅ Unbanned!','ok');loadUsers(uPage);}
+  catch(e){toast(e.message,'err');}
+}
+async function makeAgent(tid,isAgent){
+  if(!confirm(`${isAgent?'Agent ခန့်မည်':'Agent ဖယ်ရှားမည်'}`))return;
+  try{await api(`/api/admin/users/${tid}/make-agent`,'POST',{isAgent});toast(isAgent?'🎯 Agent ခန့်ပြီ!':'✅ Role ပြောင်းပြီ','ok');loadUsers(uPage);}
+  catch(e){toast(e.message,'err');}
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// AGENTS
+// ════════════════════════════════════════════════════════════════════════════
+async function loadAgents(){
+  const el=document.getElementById('agentList');
+  el.innerHTML=`<div class="empty"><div class="ei">🎯</div><div class="et">Loading...</div></div>`;
+  try{
+    const d=await api('/api/admin/agent-referrals');
+    if(!d.length){el.innerHTML=`<div class="empty"><div class="ei">🎯</div><div class="et">Agent မရှိသေးပါ</div></div>`;return;}
+    el.innerHTML=d.map(a=>{
+      const botUser = 'winnermine_bot';
+      const refLink = `https://t.me/${botUser}?start=${a.agentRefCode||''}`;
+      const kNum = a.agentKpayNumber||'';
+      const kNam = a.agentKpayName||'';
+      const wNum = a.agentWaveNumber||'';
+      const wNam = a.agentWaveName||'';
+      const kpayHtml = kNum
+        ? `<div>📱 <b>${esc(kNum)}</b> — ${esc(kNam)||'—'}</div>${a.hasWave&&wNum?`<div>🌊 <b>${esc(wNum)}</b> — ${esc(wNam)||'—'}</div>`:''}`
+        : `<span style="color:var(--red);font-size:10px;">⚠️ KPay မသတ်မှတ်ရသေးပါ</span>`;
+      return `
+      <div class="agent-item">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div><div class="agent-name">${esc(a.agentName)}</div><div class="agent-sub">ID: ${a.agentId} • Balance: ${K(a.agentBalance)} MMK</div></div>
+          <div style="font-size:1.05rem;font-weight:900;color:var(--grn);">${K(a.agentBalance)}</div>
+        </div>
+        <div style="background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:9px;padding:8px 10px;margin:7px 0;">
+          <div style="font-size:9px;color:var(--sub);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">🔗 Referral Link</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="flex:1;font-size:11px;color:#a78bfa;word-break:break-all;line-height:1.4;">${refLink}</div>
+            <button class="btn btn-gh btn-sm" style="flex-shrink:0;padding:5px 8px;" onclick="event.stopPropagation();navigator.clipboard?.writeText('${refLink}');toast('🔗 Copied!','ok')">Copy</button>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--sub);margin-bottom:8px;line-height:1.9;">${kpayHtml}</div>
+        <div class="agent-stats">
+          <div class="ast"><div class="ast-v">${a.totalReferrals||0}</div><div class="ast-l">Referrals</div></div>
+          <div class="ast"><div class="ast-v">${a.activeReferrals||0}</div><div class="ast-l">Active</div></div>
+          <div class="ast"><div class="ast-v">${K(a.totalSales)}</div><div class="ast-l">Sales MMK</div></div>
+        </div>
+        <div class="agent-comms">
+          <div class="comm-badge"><div class="comm-badge-pct dep">${a.depositCommission||0}%</div><div class="comm-badge-lbl">Deposit</div></div>
+          <div class="comm-badge"><div class="comm-badge-pct tur">${a.turnoverCommission||0}%</div><div class="comm-badge-lbl">Turnover</div></div>
+          <div class="comm-badge"><div class="comm-badge-pct" style="color:#a78bfa;">${K(a.totalCommissionEarned||0)}</div><div class="comm-badge-lbl">Earned</div></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-pur btn-sm" onclick="setCommission(${a.agentId},${a.depositCommission||0},${a.turnoverCommission||0})">📊 Set %</button>
+          <button class="btn btn-ylw btn-sm" onclick="setKPay(${a.agentId},'${esc(kNum)}','${esc(kNam)}',${a.hasWave?'true':'false'},'${esc(wNum)}','${esc(wNam)}')">💳 KPay/Wave</button>
+          <button class="btn btn-blu btn-sm" onclick="agentBal(${a.agentId})">💰 Balance</button>
+          <button class="btn btn-gh btn-sm" onclick="msgUser(${a.agentId})">📨 Msg</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML=`<div class="empty"><div class="ei">❌</div><div class="et">${esc(e.message)}</div></div>`;}
+}
+
+async function setCommission(tid,curDep,curTur){
+  const dep=prompt(`Deposit Commission % (လက်ရှိ: ${curDep}%)\n0–50:`,curDep);
+  if(dep===null)return;
+  const tur=prompt(`Turnover Commission % (လက်ရှိ: ${curTur}%)\n0–10:`,curTur);
+  if(tur===null)return;
+  try{
+    await api(`/api/admin/agents/${tid}/commission`,'POST',{depositCommission:parseFloat(dep)||0,turnoverCommission:parseFloat(tur)||0});
+    toast(`✅ Commission ပြောင်းပြီ!\nDep: ${dep}% | Tur: ${tur}%`,'ok',4000);
+    loadAgents();
+  }catch(e){toast(e.message,'err');}
+}
+async function setKPay(tid, curNum='', curName='', curHasWave=false, curWNum='', curWNam=''){
+  const num=prompt('KPay ဖုန်းနံပါတ်:', curNum);
+  if(num===null) return;
+  if(!num.trim()){toast('KPay နံပါတ် ဖြည့်ပါ','err');return;}
+  const name=prompt('KPay အမည်:', curName)||'';
+  const wave=confirm('Wave Pay ပါမယ်လား?');
+  let wNum='', wNam='';
+  if(wave){
+    const wn=prompt('Wave Pay ဖုန်းနံပါတ်:', curWNum);
+    if(wn===null) return;
+    wNum=wn;
+    const wnm=prompt('Wave Pay အမည်:', curWNam)||'';
+    wNam=wnm;
+  }
+  try{
+    await api(`/api/admin/agents/${tid}/payment-info`,'POST',{kpayNumber:num.trim(),kpayName:name,hasWave:wave,waveNumber:wNum,waveName:wNam});
+    toast(`✅ Payment Info ပြောင်းပြီ!\n📱 ${num}${wave?'\n🌊 '+wNum:''}`, 'ok', 4000);
+    loadAgents();
+  }catch(e){toast(e.message,'err');}
+}
+async function agentBal(tid){
+  const amt=prompt('Balance ဖြည့်/ဖြတ် ကျပ်:');if(!amt||isNaN(amt))return;
+  const reason=prompt('အကြောင်းပြချက်:')||'';
+  try{await api(`/api/admin/agents/${tid}/balance`,'POST',{amount:parseInt(amt),reason});toast(`✅ Agent Balance ${parseInt(amt)>0?'+':''}${parseInt(amt).toLocaleString()} ပြောင်းပြီ`,'ok');loadAgents();}
+  catch(e){toast(e.message,'err');}
+}
+async function msgUser(tid){
+  const msg=prompt('Message ရိုက်ပါ (HTML OK):');if(!msg)return;
+  try{await api('/api/admin/message','POST',{telegramId:tid,message:msg});toast('✅ Message ပို့ပြီ','ok');}
+  catch(e){toast(e.message,'err');}
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// GAMES
+// ════════════════════════════════════════════════════════════════════════════
+let gPage=1;
+async function loadGames(page=1){
+  gPage=page;
+  const el=document.getElementById('gameList');
+  el.innerHTML=`<div class="empty"><div class="ei">💣</div><div class="et">Loading...</div></div>`;
+  try{
+    const d=await api(`/api/admin/mines?page=${page}`);
+    if(!d.games.length){el.innerHTML=`<div class="empty"><div class="ei">💣</div><div class="et">Game မရှိပါ</div></div>`;return;}
+    el.innerHTML=d.games.map(g=>`
+      <div class="game-item">
+        <div class="game-top">
+          <div>
+            <div class="game-user">${esc(g.userName)} <span style="color:var(--sub)">(${g.userId})</span></div>
+            <div class="game-info">💣 ${g.bombCount} bombs • ${g.revealedCells?.length||0} revealed • ${fmtDate(g.createdAt)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="game-amt" style="color:${g.status==='cashout'?'var(--grn)':'var(--red)'}">
+              ${g.status==='cashout'?'+'+K(g.winAmount):'-'+K(g.betAmount)}
+            </div>
+            <div class="game-info">Bet: ${K(g.betAmount)}</div>
+            <div class="status-pill s-${g.status==='cashout'?'confirmed':'rejected'}">${g.status}</div>
+          </div>
+        </div>
+      </div>`).join('');
+    renderPagination('gamePg', page, d.pages, p=>loadGames(p));
+  }catch(e){el.innerHTML=`<div class="empty"><div class="ei">❌</div><div class="et">${esc(e.message)}</div></div>`;}
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SETTINGS
+// ════════════════════════════════════════════════════════════════════════════
+async function loadSettings(){
+  try{
+    const s=await api('/api/admin/settings');
+    const sw=document.getElementById('maintSwitch');
+    if(s.maintenance) sw.classList.add('on'); else sw.classList.remove('on');
+  }catch(e){}
+  loadCodes();
+}
+async function toggleMaint(){
+  const sw=document.getElementById('maintSwitch');
+  const on=!sw.classList.contains('on');
+  try{await api('/api/admin/maintenance','POST',{enabled:on});on?sw.classList.add('on'):sw.classList.remove('on');toast(on?'🔧 Maintenance ON':'✅ Maintenance OFF','info');}
+  catch(e){toast(e.message,'err');}
+}
+async function sendBroadcast(){
+  const msg=document.getElementById('bcMsg').value.trim();
+  if(!msg){toast('Message ဖြည့်ပါ','err');return;}
+  const bt=document.getElementById('bcBtnTxt').value.trim(),bu=document.getElementById('bcBtnUrl').value.trim();
+  try{await api('/api/admin/broadcast','POST',{message:msg,buttonText:bt,buttonUrl:bu});toast('📢 Broadcast started!','ok');document.getElementById('bcMsg').value='';}
+  catch(e){toast(e.message,'err');}
+}
+
+// Redeem codes
+async function createCode(){
+  const code=document.getElementById('rcCode').value.trim().toUpperCase();
+  const amt=parseInt(document.getElementById('rcAmt').value);
+  const max=parseInt(document.getElementById('rcMax').value)||1;
+  if(!code||!amt){toast('Code နှင့် Amount ဖြည့်ပါ','err');return;}
+  try{
+    await api('/api/admin/redeem/create','POST',{code,amount:amt,maxUses:max});
+    toast(`✅ Code: ${code} (${amt.toLocaleString()} MMK × ${max})`,'ok');
+    document.getElementById('rcCode').value='';document.getElementById('rcAmt').value='';document.getElementById('rcMax').value='';
+    loadCodes();
+  }catch(e){toast(e.message,'err');}
+}
+async function loadCodes(){
+  try{
+    const codes=await api('/api/admin/redeem/list');
+    const el=document.getElementById('codeList');
+    if(!codes.length){el.innerHTML='<div style="font-size:11px;color:var(--sub);text-align:center;padding:10px;">Code မရှိသေးပါ</div>';return;}
+    el.innerHTML=codes.map(c=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+        <div>
+          <div style="font-weight:700;font-size:12px;font-family:monospace;">${esc(c.code)}</div>
+          <div style="font-size:10px;color:var(--sub);">${K(c.amount)} MMK • ${c.usedBy.length}/${c.maxUses||'∞'} used</div>
+        </div>
+        <div style="display:flex;gap:5px;align-items:center;">
+          <span style="font-size:9px;font-weight:700;color:${c.isActive?'var(--grn)':'var(--sub)'};">${c.isActive?'ACTIVE':'OFF'}</span>
+          <button class="btn btn-gh btn-sm" onclick="toggleCode('${c._id}')">Toggle</button>
+          <button class="btn btn-red btn-sm" onclick="deleteCode('${c._id}')">Del</button>
+        </div>
+      </div>`).join('');
+  }catch(e){}
+}
+async function toggleCode(id){try{await api(`/api/admin/redeem/${id}/toggle`,'POST');loadCodes();}catch(e){toast(e.message,'err');}}
+async function deleteCode(id){if(!confirm('Delete?'))return;try{await api(`/api/admin/redeem/${id}`,'DELETE');toast('Deleted','info');loadCodes();}catch(e){toast(e.message,'err');}}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PAGINATION helper
+// ════════════════════════════════════════════════════════════════════════════
+function renderPagination(containerId, current, total, cb){
+  const el=document.getElementById(containerId);
+  el.innerHTML='';
+  if(total<=1) return;
+  if(current>1){const b=document.createElement('button');b.className='btn btn-gh btn-sm';b.textContent='← Prev';b.onclick=()=>cb(current-1);el.appendChild(b);}
+  const sp=document.createElement('span');sp.style.cssText='color:var(--sub);font-size:12px;padding:0 8px;';sp.textContent=`${current}/${total}`;el.appendChild(sp);
+  if(current<total){const b=document.createElement('button');b.className='btn btn-gh btn-sm';b.textContent='Next →';b.onclick=()=>cb(current+1);el.appendChild(b);}
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    let tid = null;
+    if (tg?.initDataUnsafe?.user?.id) tid = tg.initDataUnsafe.user.id;
+    else { const p=new URLSearchParams(location.search); tid=parseInt(p.get('devId')||p.get('adminId')); }
+    if (!tid) throw new Error('ID မရပါ');
+    const v = await fetch(`${API}/api/admin/verify`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telegramId:tid})});
+    const vd = await v.json();
+    if (!vd.ok) throw new Error('Access Denied');
+    adminId = vd.adminId;
+    document.getElementById('hdrBadge').textContent = `ID: ${adminId}`;
+    await loadStats();
+    await loadDeps();
+    const ldr=document.getElementById('ldr');
+    ldr.style.opacity='0';
+    setTimeout(()=>{ldr.style.display='none';document.getElementById('shell').style.display='flex';},300);
+    // Refresh stats every 60s
+    setInterval(loadStats, 60000);
+  } catch(e) {
+    document.getElementById('ldr').style.display='none';
+    const err=document.getElementById('errSc');
+    err.style.display='flex';
+    err.querySelector('div:last-child').textContent=e.message||'Access Denied';
+  }
+});
+</script>
+</body>
+</html>

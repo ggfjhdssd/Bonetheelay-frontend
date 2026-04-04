@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>💎 Diamond Hunter</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060610;--sur:rgba(255,255,255,.04);--bdr:rgba(255,255,255,.08);
+  --acc:#4f46e5;--pk:#e11d7a;--grn:#00d68f;--blu:#2563eb;--ylw:#f59e0b;
+  --tx:#f0f0ff;--sub:rgba(255,255,255,.38);
+  --glass:rgba(255,255,255,.06);--glass-bdr:rgba(255,255,255,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);min-height:100vh;color:var(--tx);overflow-x:hidden;padding-bottom:90px;}
+
+/* Background */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.orb1{position:absolute;width:600px;height:600px;border-radius:50%;top:-180px;left:-120px;
+  background:radial-gradient(circle,rgba(79,70,229,.18) 0%,transparent 70%);animation:o1 22s ease-in-out infinite alternate;}
+.orb2{position:absolute;width:500px;height:500px;border-radius:50%;bottom:-150px;right:-100px;
+  background:radial-gradient(circle,rgba(225,29,122,.13) 0%,transparent 70%);animation:o2 18s ease-in-out infinite alternate;}
+.orb3{position:absolute;width:300px;height:300px;border-radius:50%;top:40%;left:50%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle,rgba(0,214,143,.07) 0%,transparent 70%);animation:o3 14s ease-in-out infinite alternate;}
+@keyframes o1{0%{transform:translate(0,0)}100%{transform:translate(60px,45px) scale(1.08)}}
+@keyframes o2{0%{transform:translate(0,0)}100%{transform:translate(-50px,-40px) scale(1.12)}}
+@keyframes o3{0%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(-50%,-50%) scale(1.3)}}
+.gbg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:42px 42px;}
+
+/* Loader */
+#ldr{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .4s;}
+.ldr-gem{font-size:4rem;animation:gemFloat 1.6s ease-in-out infinite;}
+@keyframes gemFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-12px) scale(1.08)}}
+.ldr-t{font-size:1.4rem;font-weight:900;background:linear-gradient(135deg,#818cf8,#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.ldr-sub{font-size:13px;color:var(--sub);}
+.ring{width:32px;height:32px;border:3px solid rgba(255,255,255,.08);border-top-color:#4f46e5;border-radius:50%;animation:spin .9s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* App */
+#app{position:relative;z-index:1;max-width:440px;margin:0 auto;padding:12px 14px 16px;display:none;}
+
+/* Glassmorphism card */
+.glass{background:var(--glass);border:1px solid var(--glass-bdr);border-radius:20px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);}
+.p4{padding:16px;}
+
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.logo{font-size:1.25rem;font-weight:900;background:linear-gradient(135deg,#818cf8,#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:7px;}
+.user-info{display:flex;align-items:center;gap:8px;}
+.user-avatar{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#4f46e5,#e11d7a);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:900;flex-shrink:0;}
+.user-name{font-size:13px;font-weight:700;text-align:right;}
+.user-label{font-size:10px;color:var(--sub);text-align:right;}
+.relbtn{background:rgba(255,255,255,.06);border:1px solid var(--glass-bdr);border-radius:10px;padding:8px;cursor:pointer;display:flex;transition:.18s;backdrop-filter:blur(10px);}
+.relbtn:active{transform:scale(.9);}
+
+/* Stats Grid */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.stat{background:var(--glass);border:1px solid var(--glass-bdr);border-radius:16px;padding:13px 8px;text-align:center;backdrop-filter:blur(20px);transition:.2s;}
+.sn{font-size:1.5rem;font-weight:900;line-height:1;}
+.sl{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;}
+
+/* 3D Glass Buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;font-family:'Outfit',sans-serif;font-weight:700;border:none;cursor:pointer;border-radius:14px;padding:13px 16px;width:100%;color:#fff;font-size:14px;position:relative;overflow:hidden;transition:all .18s;letter-spacing:.02em;}
+.btn::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:rgba(255,255,255,.1);border-radius:14px 14px 0 0;pointer-events:none;}
+.btn::after{content:'';position:absolute;inset:0;border-radius:14px;border:1px solid rgba(255,255,255,.18);pointer-events:none;}
+.btn:active{transform:scale(.96) translateY(1px);}
+.btn-play{background:linear-gradient(160deg,#4f46e5,#7c3aed,#a855f7);box-shadow:0 8px 28px rgba(79,70,229,.4),inset 0 1px 0 rgba(255,255,255,.2);font-size:1.05rem;}
+.btn-grn{background:linear-gradient(160deg,#059669,#10b981,#34d399);box-shadow:0 6px 18px rgba(16,185,129,.3),inset 0 1px 0 rgba(255,255,255,.18);}
+.btn-blu{background:linear-gradient(160deg,#1d4ed8,#2563eb,#60a5fa);box-shadow:0 6px 18px rgba(37,99,235,.28),inset 0 1px 0 rgba(255,255,255,.18);}
+.btn-gld{background:linear-gradient(160deg,#92400e,#b45309,#f59e0b);box-shadow:0 6px 18px rgba(245,158,11,.28),inset 0 1px 0 rgba(255,255,255,.18);}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+
+/* Action Card */
+.action-card{margin-bottom:12px;}
+
+/* Panels */
+.panel{max-height:0;overflow:hidden;opacity:0;transition:max-height .45s cubic-bezier(.4,0,.2,1),opacity .32s,margin .3s;pointer-events:none;}
+.panel.open{max-height:1000px;opacity:1;margin-top:10px;pointer-events:auto;}
+
+/* Inputs */
+.inp{width:100%;padding:12px 15px;background:rgba(0,0,0,.28);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--tx);font-family:'Outfit',sans-serif;font-size:14px;outline:none;transition:.25s;}
+.inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(79,70,229,.18);}
+.inp::placeholder{color:rgba(255,255,255,.2);}
+.fcol{display:flex;flex-direction:column;gap:10px;}
+
+/* Payment boxes */
+.kbox{background:rgba(0,0,0,.2);border:1px solid rgba(245,184,0,.18);border-radius:14px;padding:14px;}
+.wave-kbox{background:rgba(0,0,0,.2);border:1px solid rgba(0,196,168,.22);border-radius:14px;padding:14px;}
+.krow{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:11px;padding:11px 13px;margin-bottom:8px;}
+.knum{font-family:monospace;font-size:1.1rem;font-weight:700;letter-spacing:.06em;}
+.cpybtn{background:rgba(245,184,0,.15);color:var(--ylw);border:none;padding:6px 14px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:.15s;}
+.cpybtn:active{transform:scale(.92);}
+.pay-tabs{display:flex;gap:8px;margin-bottom:13px;}
+.pay-tab{flex:1;padding:10px;border-radius:11px;border:2px solid var(--bdr);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;transition:.2s;text-align:center;}
+.pay-tab.active-kpay{border-color:#f5b800;color:#f5b800;background:rgba(245,184,0,.1);}
+.pay-tab.active-wave{border-color:#00c4a8;color:#00c4a8;background:rgba(0,196,168,.1);}
+.wave-num{font-family:monospace;font-size:1.1rem;font-weight:700;color:#00e5cc;}
+.warnbox{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.18);border-radius:10px;padding:9px 12px;margin-top:9px;font-size:12px;color:#fca5a5;text-align:center;}
+.infobox{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.18);border-radius:11px;padding:12px;margin-bottom:13px;font-size:13px;color:#93c5fd;line-height:1.75;}
+
+/* Referral */
+.refwrap{position:relative;}
+.refinp{padding-right:82px;font-size:13px;color:#a78bfa;}
+.refsend{position:absolute;right:5px;top:50%;transform:translateY(-50%);background:linear-gradient(135deg,#4f46e5,#a855f7);color:#fff;border:none;padding:7px 13px;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;}
+.refsend:active{transform:translateY(-50%) scale(.93);}
+.ref-tabs{display:flex;background:rgba(0,0,0,.2);border-radius:10px;padding:4px;gap:3px;margin-bottom:12px;}
+.rtab{flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--sub);font-family:'Outfit',sans-serif;font-weight:700;font-size:12px;cursor:pointer;transition:.2s;}
+.rtab.on{background:rgba(79,70,229,.45);color:#fff;}
+.ref-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.ref-item:last-child{border:none;}
+
+/* Game Info grid */
+.rule-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px;}
+.ritem{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:13px;padding:13px 10px;text-align:center;transition:.22s;}
+.ritem:hover{background:rgba(255,255,255,.06);transform:translateY(-2px);}
+.rico{font-size:1.6rem;margin-bottom:6px;}
+.rlbl{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.rval{font-size:.9rem;font-weight:800;}
+.stitle{font-size:.98rem;font-weight:800;margin-bottom:13px;display:flex;align-items:center;gap:7px;}
+
+/* Bottom Nav Balance Bar */
+.bot-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;max-width:440px;margin:0 auto;}
+.bot-nav-inner{background:rgba(10,10,20,.92);border-top:1px solid rgba(255,255,255,.1);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);padding:10px 16px 22px;display:flex;align-items:center;justify-content:space-between;}
+.bal-bot{display:flex;flex-direction:column;}
+.bal-bot-lbl{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.06em;}
+.bal-bot-num{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,#86efac,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;}
+.bal-bot-mmk{font-size:12px;color:#34d399;font-weight:700;}
+.play-nav-btn{background:linear-gradient(160deg,#4f46e5,#a855f7);border:none;border-radius:14px;color:#fff;font-family:'Outfit',sans-serif;font-weight:800;font-size:15px;padding:12px 22px;cursor:pointer;box-shadow:0 4px 20px rgba(79,70,229,.4),inset 0 1px 0 rgba(255,255,255,.2);display:flex;align-items:center;gap:7px;text-decoration:none;}
+.play-nav-btn:active{transform:scale(.96);}
+
+/* Toast */
+#toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-80px);z-index:9999;transition:all .38s cubic-bezier(.68,-.55,.265,1.55);opacity:0;pointer-events:none;}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.ti{padding:10px 22px;border-radius:100px;font-size:13px;font-weight:700;backdrop-filter:blur(20px);display:flex;align-items:center;gap:7px;white-space:nowrap;box-shadow:0 8px 28px rgba(0,0,0,.5);}
+.tok{background:rgba(0,214,143,.88);border:1px solid #34d399;color:#fff;}
+.terr{background:rgba(239,68,68,.88);border:1px solid #f87171;color:#fff;}
+.spn{width:15px;height:15px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
+.rdm-code-inp{letter-spacing:.14em;text-transform:uppercase;font-weight:700;font-size:15px;}
+
+@keyframes fu{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fu .45s cubic-bezier(.16,1,.3,1) both;}
+.d1{animation-delay:.06s}.d2{animation-delay:.12s}.d3{animation-delay:.18s}.d4{animation-delay:.24s}
+</style>
+</head>
+<body>
+<div class="bg"><div class="orb1"></div><div class="orb2"></div><div class="orb3"></div><div class="gbg"></div></div>
+<div id="ldr"><div class="ldr-gem">💎</div><div class="ldr-t">Diamond Hunter</div><div class="ldr-sub">Loading your vault...</div><div class="ring"></div></div>
+<div id="toast"><div class="ti" id="ti"></div></div>
+
+<div id="app">
+  <!-- Header -->
+  <div class="hdr fu">
+    <div class="logo">💎 DIAMOND HUNTER</div>
+    <div class="user-info">
+      <div style="text-align:right;">
+        <div class="user-name" id="uname">—</div>
+        <div class="user-label">Player</div>
+      </div>
+      <div class="user-avatar" id="uavatar">?</div>
+      <button class="relbtn" onclick="refreshBal()">
+        <svg id="rico" width="16" height="16" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats fu d1">
+    <div class="stat"><div class="sn" id="sG">0</div><div class="sl">Games</div></div>
+    <div class="stat" style="border-color:rgba(0,214,143,.22);"><div class="sn" style="color:var(--grn);" id="sW">0</div><div class="sl">Wins</div></div>
+    <div class="stat" style="border-color:rgba(244,63,94,.22);"><div class="sn" style="color:#f87171;" id="sL">0</div><div class="sl">Losses</div></div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="glass p4 fu d2 action-card">
+    <div class="btn-row">
+      <button class="btn btn-grn" onclick="togglePanel('dep')">💎 Add Gold</button>
+      <button class="btn btn-blu" onclick="togglePanel('wd')">🏦 Take Gold</button>
+    </div>
+    <button class="btn btn-gld" style="margin-bottom:10px;" onclick="togglePanel('rdm')">🎟️ Redeem Voucher</button>
+  </div>
+
+  <!-- Deposit Panel -->
+  <div class="panel" id="dep">
+    <div class="glass p4">
+      <div class="stitle">💎 Add Gold (Deposit)</div>
+      <div class="pay-tabs">
+        <button class="pay-tab active-kpay" id="dep-tab-kpay" onclick="switchDepMethod('kpay')">📱 KPay</button>
+        <button class="pay-tab" id="dep-tab-wave" onclick="switchDepMethod('wave')">📱 Wave Pay</button>
+      </div>
+      <div id="dep-kpay-info" class="kbox" style="margin-bottom:13px;">
+        <div style="font-size:11px;color:var(--ylw);font-weight:700;margin-bottom:10px;">📱 Transfer to KPay below</div>
+        <div class="krow"><div><div style="font-size:10px;color:var(--sub);margin-bottom:2px;">KPay Number</div><div class="knum" id="dep-kpay-number">09792310926</div></div><button class="cpybtn" onclick="copyTxt('09792310926')">Copy</button></div>
+        <div class="krow" style="margin-bottom:0;"><div><div style="font-size:10px;color:var(--sub);margin-bottom:2px;">Account Name</div><div style="font-weight:700;" id="dep-kpay-name">Admin</div></div><button class="cpybtn" onclick="copyTxt('Admin')">Copy</button></div>
+        <div class="warnbox">⚠️ Fill in the form AFTER transferring funds</div>
+      </div>
+      <div id="dep-wave-info" class="wave-kbox" style="margin-bottom:13px;display:none;">
+        <div style="font-size:11px;color:#00e5cc;font-weight:700;margin-bottom:10px;">📱 Transfer to Wave Pay below</div>
+        <div class="krow"><div><div style="font-size:10px;color:var(--sub);margin-bottom:2px;">Wave Pay Number</div><div class="wave-num" id="dep-wave-number">09792310926</div></div><button class="cpybtn" style="background:rgba(0,196,168,.14);color:#00e5cc;" onclick="copyTxt('09792310926')">Copy</button></div>
+        <div class="krow" style="margin-bottom:0;"><div><div style="font-size:10px;color:var(--sub);margin-bottom:2px;">Account Name</div><div style="font-weight:700;" id="dep-wave-name">Admin</div></div><button class="cpybtn" style="background:rgba(0,196,168,.14);color:#00e5cc;" onclick="copyTxt('Admin')">Copy</button></div>
+        <div class="warnbox" style="background:rgba(0,196,168,.07);border-color:rgba(0,196,168,.2);color:#a7f3ee;">⚠️ Fill in the form AFTER transferring funds</div>
+      </div>
+      <div class="fcol">
+        <input class="inp" id="dN" placeholder="Your Name (as shown on KPay / Wave Pay)">
+        <input class="inp" id="dT" placeholder="Transaction ID / Reference Number">
+        <input class="inp" id="dA" type="number" placeholder="Amount (Min 2,500 MMK)" min="2500">
+        <button class="btn btn-grn" onclick="submitDep()"><span id="dTx">✅ Confirm Deposit</span><div class="spn" id="dSp" style="display:none;"></div></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Withdraw Panel -->
+  <div class="panel" id="wd">
+    <div class="glass p4">
+      <div class="stitle">🏦 Take Gold (Withdraw)</div>
+      <div class="infobox">• Minimum withdrawal: <b style="color:#fff;">5,000 MMK</b><br>• Admin will process within 24 hours after verification</div>
+      <div class="pay-tabs">
+        <button class="pay-tab active-kpay" id="wd-tab-kpay" onclick="switchWdMethod('kpay')">📱 KPay</button>
+        <button class="pay-tab" id="wd-tab-wave" onclick="switchWdMethod('wave')">📱 Wave Pay</button>
+      </div>
+      <div class="fcol">
+        <input class="inp" id="wN" placeholder="Recipient KPay Account Name">
+        <input class="inp" id="wP" placeholder="Phone Number (09xxxxxxx)">
+        <input class="inp" id="wA" type="number" placeholder="Amount to withdraw (Min 5,000 MMK)" min="5000">
+        <button class="btn btn-blu" onclick="submitWd()"><span id="wTx">🏦 Withdraw Now</span><div class="spn" id="wSp" style="display:none;"></div></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Redeem Panel -->
+  <div class="panel" id="rdm">
+    <div class="glass p4">
+      <div class="stitle">🎟️ Redeem Voucher</div>
+      <div class="infobox" style="background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.22);color:#fde68a;">🎁 Enter a promo or voucher code to claim bonus gold!</div>
+      <div class="fcol">
+        <input class="inp rdm-code-inp" id="rdmCode" placeholder="ENTER CODE HERE" autocomplete="off" oninput="this.value=this.value.toUpperCase()">
+        <button class="btn btn-gld" onclick="submitRedeem()"><span id="rdmTx">🎟️ Claim Reward</span><div class="spn" id="rdmSp" style="display:none;"></div></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Referral -->
+  <div class="glass p4 fu d3" style="margin-bottom:12px;">
+    <div class="stitle">🔗 Invite Friends</div>
+    <div style="font-size:13px;color:var(--sub);margin-bottom:13px;line-height:1.75;">For every friend who deposits <b style="color:#fff;">2,500 MMK</b>, you earn <b style="color:var(--grn);">100 MMK</b> instantly!</div>
+    <div class="refwrap" style="margin-bottom:14px;">
+      <input class="inp refinp" id="refL" readonly value="Loading...">
+      <button class="refsend" onclick="sendRef()">📤 Share</button>
+    </div>
+    <div class="ref-tabs">
+      <button class="rtab on" id="rt-link" onclick="rtab('link')">🔗 My Link</button>
+      <button class="rtab" id="rt-list" onclick="rtab('list')">👥 My Referrals (<span id="refCnt">0</span>)</button>
+    </div>
+    <div id="refList" style="display:none;min-height:50px;">
+      <div id="refContent" style="color:var(--sub);text-align:center;padding:16px;font-size:13px;">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Game Info -->
+  <div class="glass p4 fu d4">
+    <div class="stitle">📖 How to Play</div>
+    <div class="rule-grid">
+      <div class="ritem"><div class="rico">💀</div><div class="rlbl">Hazards</div><div class="rval">Hidden Skulls</div></div>
+      <div class="ritem" style="border-color:rgba(0,214,143,.18);"><div class="rico">💎</div><div class="rlbl">Reward</div><div class="rval" style="color:var(--grn);">Instant Claim</div></div>
+      <div class="ritem" style="border-color:rgba(79,70,229,.18);"><div class="rico">🚀</div><div class="rlbl">Multiplier</div><div class="rval" style="color:#818cf8;">Rises Each Find</div></div>
+      <div class="ritem" style="border-color:rgba(245,159,11,.18);"><div class="rico">📈</div><div class="rlbl">Strategy</div><div class="rval" style="color:var(--ylw);">Claim Anytime!</div></div>
+    </div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.4rem;">💡</span>
+      <span style="font-size:13px;color:var(--sub);">Find diamonds 💎, avoid skulls 💀. More skulls = higher rewards. Claim profit anytime before you hit a skull!</span>
+    </div>
+  </div>
+</div>
+
+<!-- Fixed Bottom Balance Nav -->
+<div class="bot-nav" id="botNav" style="display:none;">
+  <div class="bot-nav-inner">
+    <div class="bal-bot">
+      <div class="bal-bot-lbl">💎 Your Vault</div>
+      <div style="display:flex;align-items:baseline;gap:5px;">
+        <div class="bal-bot-num" id="balNum">0</div>
+        <div class="bal-bot-mmk">MMK</div>
+      </div>
+    </div>
+    <a href="/play.html" class="play-nav-btn">💎 Hunt Now</a>
+  </div>
+</div>
+
+<script>
+const tg=window.Telegram?.WebApp;
+if(tg){tg.expand();tg.ready();}
+const API='https://minebackend-dyyq.onrender.com';
+const BOT='winnermine_bot';
+let user=null,toastT,refLoaded=false;
+
+async function safeFetch(url,opts={}){
+  let r;
+  try{r=await fetch(url,opts);}
+  catch(netErr){throw new Error('Network error: '+netErr.message);}
+  const raw=await r.text();
+  let d;
+  try{d=JSON.parse(raw);}
+  catch(_){throw new Error(`Server error (${r.status}): ${raw.slice(0,120)}`);}
+  if(!r.ok)throw new Error(d.error||`HTTP ${r.status}`);
+  return d;
+}
+function toast(msg,ok=true,dur=3200){const el=document.getElementById('toast'),ti=document.getElementById('ti');ti.textContent=(ok?'✅ ':'⚠️ ')+msg;ti.className='ti '+(ok?'tok':'terr');el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),dur);}
+function togglePanel(id){['dep','wd','rdm'].forEach(p=>{const e=document.getElementById(p);if(p===id)e.classList.toggle('open');else e.classList.remove('open');});setTimeout(()=>document.getElementById(id).scrollIntoView({behavior:'smooth',block:'nearest'}),130);if(id==='dep')loadPaymentInfo();}
+function copyTxt(t){navigator.clipboard?.writeText(t);if(tg?.HapticFeedback)tg.HapticFeedback.impactOccurred('light');toast('Copied to clipboard!',true,1800);}
+function sendRef(){const l=document.getElementById('refL').value;if(!l||l==='Loading...')return;const u=`https://t.me/share/url?url=${encodeURIComponent(l)}&text=${encodeURIComponent('💎 Diamond Hunter — Hunt for diamonds & win big!\n🏆 Join me and claim bonus gold!\nStart playing 👇')}`;if(tg?.openTelegramLink)tg.openTelegramLink(u);else window.open(u,'_blank');}
+function rtab(t){['link','list'].forEach(x=>document.getElementById('rt-'+x).classList.toggle('on',x===t));document.getElementById('refList').style.display=t==='list'?'block':'none';if(t==='list'&&!refLoaded)loadRefList();}
+async function loadRefList(){if(!user?.telegramId)return;refLoaded=true;const el=document.getElementById('refContent');el.innerHTML='<div class="ring" style="margin:0 auto;"></div>';try{const d=await safeFetch(`${API}/api/referrals/${user.telegramId}`);document.getElementById('refCnt').textContent=d.total||0;if(!d.referrals?.length){el.innerHTML='<div style="color:var(--sub);text-align:center;padding:20px;font-size:13px;">No referrals yet. Share your link!</div>';return;}el.innerHTML=d.referrals.map(r=>`<div class="ref-item"><div><div style="font-weight:700;font-size:13px;">${esc(r.name)}</div><div style="font-size:11px;color:var(--sub);">${new Date(r.joinedAt).toLocaleDateString()}</div></div><div style="font-weight:800;font-size:13px;color:var(--grn);">${(r.balance||0).toLocaleString()} MMK</div></div>`).join('');}catch(e){refLoaded=false;el.innerHTML=`<div style="color:#f87171;text-align:center;padding:16px;">⚠️ ${esc(e.message)}</div>`;}}
+function esc(s){return(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
+function animN(id,end,dur=750){const el=document.getElementById(id);const start=parseInt(el.textContent.replace(/,/g,''))||0;if(start===end){el.textContent=end.toLocaleString();return;}let t0=null;const s=ts=>{if(!t0)t0=ts;const p=Math.min((ts-t0)/dur,1);el.textContent=Math.floor(p*(end-start)+start).toLocaleString();if(p<1)requestAnimationFrame(s);else el.textContent=end.toLocaleString();};requestAnimationFrame(s);}
+function updateUI(){if(!user)return;const name=user.firstName||user.username||'Hunter';document.getElementById('uname').textContent=name;document.getElementById('uavatar').textContent=name.charAt(0).toUpperCase();animN('balNum',user.balance||0);document.getElementById('sG').textContent=user.totalGames||0;document.getElementById('sW').textContent=user.wins||0;document.getElementById('sL').textContent=user.losses||0;document.getElementById('refL').value=`https://t.me/${BOT}?start=${user.referralCode||''}`;}
+async function init(){try{const initData=tg?.initData||'';const savedId=sessionStorage.getItem('uid');let body;if(initData)body={initData};else if(savedId){try{const d2=await safeFetch(`${API}/api/user/${savedId}`);if(d2.balance!==undefined){user={telegramId:parseInt(savedId),...d2};updateUI();hideLdr();return;}}catch(_){}body={telegramId:parseInt(savedId)};}else body={telegramId:12345};user=await safeFetch(`${API}/api/auth`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(user.telegramId)sessionStorage.setItem('uid',user.telegramId);updateUI();hideLdr();loadPaymentInfo();}catch(e){console.error('init:',e);hideLdr();toast(`Connection error: ${e.message}`,false,8000);}}
+function hideLdr(){const l=document.getElementById('ldr');l.style.opacity='0';setTimeout(()=>{l.style.display='none';document.getElementById('app').style.display='block';document.getElementById('botNav').style.display='block';},360);}
+async function refreshBal(){if(!user?.telegramId)return;const ico=document.getElementById('rico');ico.style.animation='spin .7s linear infinite';try{const d=await safeFetch(`${API}/api/user/${user.telegramId}`);if(d.balance!==undefined){Object.assign(user,d);animN('balNum',d.balance);toast('Balance updated!',true,2000);}}catch(e){toast('Connection error: '+e.message,false);}setTimeout(()=>ico.style.animation='',800);}
+function setLd(p,on){document.getElementById(p+'Tx').style.display=on?'none':'inline';document.getElementById(p+'Sp').style.display=on?'inline-block':'none';}
+let depMethod='kpay',wdMethod='kpay',_payInfo=null;
+async function loadPaymentInfo(){if(!user?.telegramId)return;try{_payInfo=await safeFetch(`${API}/api/payment-info/${user.telegramId}`);applyPaymentInfo();}catch(e){console.warn('paymentInfo:',e.message);}}
+function applyPaymentInfo(){if(!_payInfo)return;const{kpayNumber,kpayName,hasWave,waveNumber,waveName}=_payInfo;const kn=document.getElementById('dep-kpay-number'),km=document.getElementById('dep-kpay-name');if(kn){kn.textContent=kpayNumber;document.querySelectorAll('[onclick*="09792310926"]').forEach(b=>{const numStr=b.getAttribute('onclick').includes('09792310926');if(numStr)b.setAttribute('onclick',`copyTxt('${kpayNumber}')`)});} if(km)km.textContent=kpayName;const wt=document.getElementById('dep-tab-wave');if(!hasWave){if(wt)wt.style.display='none';}else{if(wt)wt.style.display='';const wNum=document.getElementById('dep-wave-number'),wNm=document.getElementById('dep-wave-name');if(wNum&&waveNumber)wNum.textContent=waveNumber;if(wNm&&waveName)wNm.textContent=waveName;}}
+function switchDepMethod(m){if(m==='wave'&&_payInfo&&!_payInfo.hasWave)return;depMethod=m;document.getElementById('dep-kpay-info').style.display=m==='kpay'?'':'none';document.getElementById('dep-wave-info').style.display=m==='wave'?'':'none';document.getElementById('dep-tab-kpay').className='pay-tab'+(m==='kpay'?' active-kpay':'');document.getElementById('dep-tab-wave').className='pay-tab'+(m==='wave'?' active-wave':'');}
+function switchWdMethod(m){wdMethod=m;document.getElementById('wd-tab-kpay').className='pay-tab'+(m==='kpay'?' active-kpay':'');document.getElementById('wd-tab-wave').className='pay-tab'+(m==='wave'?' active-wave':'');document.getElementById('wN').placeholder=m==='wave'?'Recipient Wave Pay Account Name':'Recipient KPay Account Name';document.getElementById('wP').placeholder=m==='wave'?'Wave Pay Phone Number':'KPay Phone Number';}
+async function submitDep(){const name=document.getElementById('dN').value.trim(),txn=document.getElementById('dT').value.trim(),amt=parseInt(document.getElementById('dA').value);if(!name)return toast('Please enter your account name',false);if(!txn)return toast('Please enter the Transaction ID',false);if(!amt||amt<2500)return toast('Minimum deposit is 2,500 MMK',false);if(!user)return toast('Please login first',false);setLd('d',true);try{const res=await safeFetch(`${API}/api/deposit`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telegramId:user.telegramId,kpayName:name,transactionId:txn,amount:amt,paymentMethod:depMethod})});if(res.success){toast('Request submitted! Admin is reviewing.',true,4000);document.getElementById('dN').value='';document.getElementById('dT').value='';document.getElementById('dA').value='';togglePanel('dep');}else toast(res.error||'Error occurred',false,4500);}catch(e){toast(e.message,false,5000);}setLd('d',false);}
+async function submitWd(){const name=document.getElementById('wN').value.trim(),num=document.getElementById('wP').value.trim(),amt=Number(document.getElementById('wA').value.replace(/,/g,''));if(!name)return toast('Please enter recipient account name',false);if(!num)return toast('Please enter phone number',false);if(isNaN(amt)||amt<5000)return toast('Minimum withdrawal is 5,000 MMK',false);if(!user)return toast('Please login first',false);try{const fd=await safeFetch(`${API}/api/user/${user.telegramId}`);if(fd.balance!==undefined){user.balance=Number(fd.balance);animN('balNum',user.balance);}}catch(e){}if(amt>Number(user.balance))return toast(`Insufficient balance (Available: ${Number(user.balance).toLocaleString()} MMK)`,false,4500);setLd('w',true);try{const res=await safeFetch(`${API}/api/withdraw`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telegramId:user.telegramId,kpayName:name,kpayNumber:num,amount:amt,paymentMethod:wdMethod})});if(res.success){user.balance=Number(res.newBalance);animN('balNum',user.balance);toast('Withdrawal request sent! Admin reviewing.',true,4000);document.getElementById('wN').value='';document.getElementById('wP').value='';document.getElementById('wA').value='';togglePanel('wd');}else toast(res.error||'Error occurred',false,4500);}catch(e){toast(e.message,false,5000);}setLd('w',false);}
+async function submitRedeem(){const code=document.getElementById('rdmCode').value.trim().toUpperCase();if(!code)return toast('Please enter a voucher code',false);if(!user)return toast('Please login first',false);document.getElementById('rdmTx').style.display='none';document.getElementById('rdmSp').style.display='inline-block';try{const res=await safeFetch(`${API}/api/redeem`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telegramId:user.telegramId,code})});if(res.success){user.balance=Number(res.newBalance);animN('balNum',user.balance);toast(`🎉 ${res.amount.toLocaleString()} MMK claimed!`,true,5000);document.getElementById('rdmCode').value='';togglePanel('rdm');}else toast(res.error||'Invalid code',false,4500);}catch(e){toast(e.message,false,5000);}document.getElementById('rdmTx').style.display='inline';document.getElementById('rdmSp').style.display='none';}
+setInterval(async()=>{if(!user?.telegramId||document.visibilityState!=='visible')return;try{const d=await safeFetch(`${API}/api/user/${user.telegramId}`);if(d.balance!==undefined&&Number(d.balance)!==Number(user.balance)){animN('balNum',Number(d.balance));user.balance=Number(d.balance);}}catch(e){}},60000);
+window.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
