@@ -246,7 +246,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--tx);displa
 <script>
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
-const API = 'https://minebackend-dyyq.onrender.com';
+const API = 'https://bonetheelay-backend.onrender.com';
 let adminId = null;
 
 // ── Utilities ────────────────────────────────────────────────────────────────
@@ -509,7 +509,7 @@ async function loadAgents(){
     const d=await api('/api/admin/agent-referrals');
     if(!d.length){el.innerHTML=`<div class="empty"><div class="ei">🎯</div><div class="et">Agent မရှိသေးပါ</div></div>`;return;}
     el.innerHTML=d.map(a=>{
-      const botUser = 'winnermine_bot';
+      const botUser = 'Minetheelay_bot';
       const refLink = `https://t.me/${botUser}?start=${a.agentRefCode||''}`;
       const kNum = a.agentKpayNumber||'';
       const kNam = a.agentKpayName||'';
