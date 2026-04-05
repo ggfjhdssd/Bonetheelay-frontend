@@ -399,8 +399,15 @@ select.inp option{background:#0d1120;color:var(--text)}
 
   <!-- TOP BAR -->
   <div class="top-bar">
-    <a href="/index.html" class="back-btn">← နောက်သို့</a>
-    <div class="page-title">💵 THE VAULT</div>
+    <div class="bal-pill">
+      <span style="font-size:0.85rem">👤</span>
+      <span class="bal-pill-num" id="userNameDisp" style="font-family:var(--font-my);font-size:0.82rem">—</span>
+    </div>
+    <div class="page-title">💵 CASH HUNTER</div>
+  </div>
+  <!-- BALANCE BAR -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <a href="/index.html" class="back-btn" style="font-size:0.78rem;">← နောက်သို့</a>
     <div class="bal-pill">
       <span style="font-size:0.85rem">💵</span>
       <span class="bal-pill-num" id="balVal">0</span>
@@ -604,6 +611,8 @@ async function init(){
     else if(devId)user=await api('/api/auth','POST',{telegramId:devId});
     else user=await api('/api/auth','POST',{telegramId:'12345678'});
     G.userId=user.telegramId;setBalance(user.balance);
+    const dispName=user.firstName||user.username||('User'+user.telegramId);
+    document.getElementById('userNameDisp').textContent=dispName;
     const active=await api(`/api/mines/current/${G.userId}`);
     if(active.hasActiveGame)resumeGame(active);
     else{showSetup();loadHistory();}
