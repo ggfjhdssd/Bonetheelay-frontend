@@ -982,7 +982,6 @@ async function loadRefList(){
       </div>`).join('');
   }catch(e){refLoaded=false;el.innerHTML=`<div style="color:var(--neon-r);text-align:center;padding:16px;font-size:0.8rem">⚠️ ${esc(e.message)}</div>`;}
 }
-}
 function esc(s){return(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
 
 function animN(id,end,dur=750){
