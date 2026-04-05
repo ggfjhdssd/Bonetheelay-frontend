@@ -712,15 +712,42 @@ body::after{
 
 
   <!-- ── REFERRAL SECTION ── -->
-  <div class="sec-title su d3">🔗 Agent System — MLM</div>
+  <div class="sec-title su d3">🔗 သူငယ်ချင်း ဖိတ်ရန်</div>
   <div class="g-card su d3" style="margin-bottom:12px">
     <div class="panel-inner">
-      <div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:12px;line-height:2;">
-        🎯 <strong style="color:var(--neon-y)">Agent System</strong> ဆိုတာ သင့် Link ကနေ ဝင်လာသည့် Member များ ငွေဖြည့်ပြီး ဆော့လျှင် ၊ Member ရှုံးသည့်အခါ <strong style="color:var(--neon-g)">Commission %</strong> ချက်ခြင်း ရမည်!<br>
-        💰 <strong style="color:var(--neon-g)">Deposit Commission</strong> — Member ငွေဖြည့်တိုင်း % ရမည်<br>
-        🎮 <strong style="color:var(--neon-g)">Turnover Commission</strong> — Member ဂိမ်းဆော့တိုင်း Bet ၏ % ရမည်<br>
-        📩 Agent ဖြစ်လိုပါက Admin ကို ဆက်သွယ်ပါ!
+
+      <!-- Commission rate explainer -->
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.72rem;letter-spacing:0.1em;color:var(--text-dim);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          💸 မိတ်ဆွေ ဆော့ပြီး ရှုံးသည့်အခါ သင်ရမည့် %
+          <span style="flex:1;height:1px;background:var(--border);display:block"></span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+          <div style="background:rgba(0,255,136,0.07);border:1px solid rgba(0,255,136,0.2);border-radius:12px;padding:10px 6px;text-align:center;">
+            <div style="font-family:var(--font-en);font-weight:900;font-size:1.1rem;color:var(--neon-g);">1%</div>
+            <div style="font-size:0.6rem;color:var(--text-dim);margin-top:3px;">တိုက်ရိုက်<br>ဖိတ်သူ</div>
+          </div>
+          <div style="background:rgba(0,255,136,0.04);border:1px solid rgba(0,255,136,0.12);border-radius:12px;padding:10px 6px;text-align:center;">
+            <div style="font-family:var(--font-en);font-weight:900;font-size:1.1rem;color:var(--neon-g);opacity:0.8;">0.5%</div>
+            <div style="font-size:0.6rem;color:var(--text-dim);margin-top:3px;">၂ ထပ်<br>မိတ်ဆွေ</div>
+          </div>
+          <div style="background:rgba(0,255,136,0.03);border:1px solid rgba(0,255,136,0.08);border-radius:12px;padding:10px 6px;text-align:center;">
+            <div style="font-family:var(--font-en);font-weight:900;font-size:1.1rem;color:var(--neon-g);opacity:0.6;">0.25%</div>
+            <div style="font-size:0.6rem;color:var(--text-dim);margin-top:3px;">၃ ထပ်<br>မိတ်ဆွေ</div>
+          </div>
+          <div style="background:rgba(0,255,136,0.02);border:1px solid rgba(0,255,136,0.06);border-radius:12px;padding:10px 6px;text-align:center;">
+            <div style="font-family:var(--font-en);font-weight:900;font-size:1.1rem;color:var(--neon-g);opacity:0.45;">0.125%</div>
+            <div style="font-size:0.6rem;color:var(--text-dim);margin-top:3px;">၄ ထပ်<br>မိတ်ဆွေ</div>
+          </div>
+        </div>
+        <!-- Earnings summary row -->
+        <div id="refEarnRow" style="display:none;background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.18);border-radius:12px;padding:10px 13px;">
+          <div style="font-size:0.68rem;color:var(--neon-y);font-weight:700;letter-spacing:0.08em;margin-bottom:7px;">💰 သင်ရရှိပြီးသော Commission</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;" id="refEarnGrid"></div>
+        </div>
       </div>
+
+      <!-- Share link -->
       <div class="ref-link-row">
         <input class="inp ref-inp" id="refL" readonly value="လင့် ရနေသည်...">
         <button class="ref-share-btn" onclick="sendRef()">📤 မျှ</button>
@@ -921,9 +948,40 @@ async function loadRefList(){
   try{
     const d=await safeFetch(`${API}/api/referrals/${user.telegramId}`);
     document.getElementById('refCnt').textContent=d.total||0;
-    if(!d.referrals?.length){el.innerHTML='<div style="color:var(--text-dim);text-align:center;padding:18px;font-size:0.82rem">ဖိတ်ထားသူ မရှိသေး — လင့် မျှဝေပါ!</div>';return;}
-    el.innerHTML=d.referrals.map(r=>`<div class="ref-item"><div><div style="font-weight:700;font-size:0.85rem">${esc(r.name)}</div><div style="font-size:0.7rem;color:var(--text-dim)">${new Date(r.joinedAt).toLocaleDateString()}</div></div><div style="font-weight:800;font-size:0.85rem;color:var(--neon-g);font-family:var(--font-en)">${(r.balance||0).toLocaleString()} MMK</div></div>`).join('');
+
+    // Show commission earnings
+    const cs=d.commissionSummary||{};
+    if((cs.total||0)>0){
+      const row=document.getElementById('refEarnRow');
+      const grid=document.getElementById('refEarnGrid');
+      row.style.display='';
+      const lvls=[
+        {lbl:'L1 (တိုက်ရိုက်)',val:cs.level1||0,c:'var(--neon-g)'},
+        {lbl:'L2 (၂ ထပ်)',val:cs.level2||0,c:'rgba(0,255,136,0.7)'},
+        {lbl:'L3 (၃ ထပ်)',val:cs.level3||0,c:'rgba(0,255,136,0.5)'},
+        {lbl:'L4 (၄ ထပ်)',val:cs.level4||0,c:'rgba(0,255,136,0.35)'},
+      ];
+      grid.innerHTML=lvls.map(l=>`
+        <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:9px;padding:7px 9px;">
+          <div style="font-size:0.6rem;color:var(--text-dim);margin-bottom:2px;">${l.lbl}</div>
+          <div style="font-family:var(--font-en);font-weight:800;font-size:0.85rem;color:${l.c};">${(l.val).toLocaleString()} ကျပ်</div>
+        </div>`).join('');
+    }
+
+    if(!d.referrals?.length){
+      el.innerHTML='<div style="color:var(--text-dim);text-align:center;padding:18px;font-size:0.82rem">ဖိတ်ထားသူ မရှိသေး — လင့် မျှဝေပါ!</div>';
+      return;
+    }
+    el.innerHTML=d.referrals.map(r=>`
+      <div class="ref-item">
+        <div>
+          <div style="font-weight:700;font-size:0.85rem">${esc(r.name)}</div>
+          <div style="font-size:0.7rem;color:var(--text-dim)">${new Date(r.joinedAt).toLocaleDateString()}</div>
+        </div>
+        <div style="font-weight:800;font-size:0.85rem;color:var(--neon-g);font-family:var(--font-en)">${(r.balance||0).toLocaleString()} MMK</div>
+      </div>`).join('');
   }catch(e){refLoaded=false;el.innerHTML=`<div style="color:var(--neon-r);text-align:center;padding:16px;font-size:0.8rem">⚠️ ${esc(e.message)}</div>`;}
+}
 }
 function esc(s){return(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
 
@@ -948,9 +1006,6 @@ function updateUI(){
   document.getElementById('uavatar').textContent=name.charAt(0).toUpperCase();
   animN('balNum',user.balance||0);
   animN('balNumBot',user.balance||0);
-  document.getElementById('sG').textContent=user.totalGames||0;
-  document.getElementById('sW').textContent=user.wins||0;
-  document.getElementById('sL').textContent=user.losses||0;
   document.getElementById('refL').value=`https://t.me/${BOT}?start=${user.referralCode||''}`;
 }
 
@@ -967,6 +1022,25 @@ async function init(){
     user=await safeFetch(`${API}/api/auth`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(user.telegramId)sessionStorage.setItem('uid',user.telegramId);
     updateUI();hideLdr();loadPaymentInfo();
+    // Load referral earnings silently for commission display
+    safeFetch(`${API}/api/referrals/${user.telegramId}`).then(d=>{
+      const cs=d.commissionSummary||{};
+      if((cs.total||0)>0){
+        const row=document.getElementById('refEarnRow');
+        const grid=document.getElementById('refEarnGrid');
+        if(row&&grid){
+          row.style.display='';
+          const lvls=[
+            {lbl:'L1 (တိုက်ရိုက်)',val:cs.level1||0,c:'var(--neon-g)'},
+            {lbl:'L2 (၂ ထပ်)',val:cs.level2||0,c:'rgba(0,255,136,0.7)'},
+            {lbl:'L3 (၃ ထပ်)',val:cs.level3||0,c:'rgba(0,255,136,0.5)'},
+            {lbl:'L4 (၄ ထပ်)',val:cs.level4||0,c:'rgba(0,255,136,0.35)'},
+          ];
+          grid.innerHTML=lvls.map(l=>`<div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:9px;padding:7px 9px;"><div style="font-size:0.6rem;color:var(--text-dim);margin-bottom:2px;">${l.lbl}</div><div style="font-family:var(--font-en);font-weight:800;font-size:0.85rem;color:${l.c};">${(l.val).toLocaleString()} ကျပ်</div></div>`).join('');
+        }
+      }
+      document.getElementById('refCnt').textContent=d.total||0;
+    }).catch(()=>{});
   }catch(e){console.error('init:',e);hideLdr();toast(`ချိတ်ဆက်မှု မအောင်မြင်: ${e.message}`,false,8000);}
 }
 function hideLdr(){
