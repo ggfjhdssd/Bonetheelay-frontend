@@ -111,7 +111,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--tx);displa
 </head>
 <body>
 <div class="amb"></div>
-<div id="ldr"><div class="ldr-icon">💎</div><div class="ldr-title">Agent Panel</div><div class="ring"></div></div>
+<div id="ldr"><div class="ldr-icon">💵</div><div class="ldr-title">Agent Panel</div><div class="ring"></div></div>
 <div id="errSc">
   <div style="font-size:3.5rem">🚫</div>
   <div style="font-size:1.15rem;font-weight:800;" id="esTitle">Agent မဟုတ်ပါ</div>
@@ -124,7 +124,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--tx);displa
     <div class="hdr-av" id="hdrAv">🎯</div>
     <div style="flex:1;min-width:0;">
       <div class="hdr-name" id="hdrName">Agent</div>
-      <div class="hdr-role">💎 DIAMOND HUNTER AGENT</div>
+      <div class="hdr-role">💵 DIAMOND HUNTER AGENT</div>
     </div>
     <div>
       <div class="hdr-bal-amt" id="hdrBal">0</div>
@@ -347,7 +347,7 @@ function copyRef(){
 }
 function shareRef(){
   const link=document.getElementById('refUrl').dataset.link||document.getElementById('refUrl').textContent;
-  const text=`💎 Diamond Hunter Game ကစားပြီးငွေရှာကြစို့!\n📈 ဗုံးများလေ Multiplier မြင့်လာလေ!\n🚀 မြန်ဆန်တဲ့ ငွေထုတ်စနစ်\nJoin ပါ 👇`;
+  const text=`💵 Cash Hunter Game ကစားပြီးငွေရှာကြစို့!\n📈 ဗုံးများလေ Multiplier မြင့်လာလေ!\n🚀 မြန်ဆန်တဲ့ ငွေထုတ်စနစ်\nJoin ပါ 👇`;
   const url=`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
   if(tg?.openTelegramLink) tg.openTelegramLink(url);
   else window.open(url,'_blank');
